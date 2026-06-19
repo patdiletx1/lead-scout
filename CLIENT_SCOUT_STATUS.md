@@ -190,7 +190,19 @@ Clasificación: Hot (80+), Warm (60-79), Cold (40-59), Discard (<40)
 
 **⚠️ Bloqueado por 2FA:** La sesión de LinkedIn actual tiene una pantalla de 2FA pendiente.
 
-### 9. lead_dashboard.py (1,400+ líneas)
+### 9. email_sender.py (216 líneas) — NUEVO Fase 5
+**Envío de cold emails.** Soporta dos métodos:
+
+- **Gmail SMTP** — Usa App Password (no la contraseña regular). Requiere 2FA activado en la cuenta Google.
+- **SendGrid API** — Si `SENDGRID_API_KEY` está configurada, toma prioridad.
+
+Métodos: `send(to_email, subject, body, to_name, language)` → dict con ok/message_id/error
+Configuración: `GMAIL_APP_EMAIL`, `GMAIL_APP_PASSWORD`, `SENDGRID_API_KEY`
+
+### 10. save_session.py (161 líneas) — NUEVO Fase 5
+**Login manual de LinkedIn en Mac local.** Abre Chromium con Playwright, el usuario hace login manual (incluyendo 2FA), y guarda la sesión para subir al VPS.
+
+### 11. lead_dashboard.py (1,400+ líneas)
 **Dashboard web.** Flask single-file con HTML/CSS/JS inline (mismo patrón que jobs.patdilet.dev):
 
 - **Stats cards**: 10 métricas del pipeline
@@ -297,13 +309,14 @@ Clasificación: Hot (80+), Warm (60-79), Cold (40-59), Discard (<40)
 
 ## Plan de Desarrollo — Backlog
 
-### 🔴 Fase 5: Desbloquear Envío Real (Prioridad CRÍTICA)
+### 🔴 Fase 5: Desbloquear Envío Real (EN PROGRESO)
 
-| # | Tarea | Archivos | Esfuerzo |
-|---|-------|----------|----------|
-| 5.1 | **Resolver LinkedIn 2FA** — La sesión tiene una pantalla de 2FA pendiente. Ejecutar `session_login.py` en modo visible (headless=false) para completar el login. | `session_login.py` (existente) | 30 min |
-| 5.2 | **Email sender** — Implementar envío de cold emails vía SMTP (Gmail OAuth o SendGrid API). Conectar con el endpoint `/api/outreach/<id>/approve` para canal `email`. | `email_sender.py` (nuevo) | 3-4 h |
-| 5.3 | **Probar envío real end-to-end** — Aprobar un draft → verificar que el connection request aparece en LinkedIn. | — | 30 min |
+| # | Tarea | Archivos | Estado |
+|---|-------|----------|--------|
+| 5.1 | **Resolver LinkedIn 2FA** — La sesión tiene una pantalla de 2FA pendiente. Usar `save_session.py` en Mac local para login manual + 2FA, luego SCP al VPS. | `save_session.py` | ⚠️ Pendiente acción usuario |
+| 5.2 | **Email sender** — Envío de cold emails vía Gmail SMTP (App Password) o SendGrid API. | `email_sender.py` (216 líneas) | ✅ Completado |
+| 5.3 | **Git-based deploy** — VPS clona el repo. Deploy es `git pull` en vez de SCP. | `deploy/deploy.sh` | ✅ Completado |
+| 5.4 | **Probar envío real end-to-end** — Aprobar un draft → verificar envío en LinkedIn/email. | — | ⏳ Bloqueado por 5.1 |
 
 ### 🟡 Fase 6: Mejorar Calidad de Leads
 
@@ -339,7 +352,7 @@ Clasificación: Hot (80+), Warm (60-79), Cold (40-59), Discard (<40)
 |---|------|---------|
 | 1 | Sin tests automatizados | Riesgo de regresiones |
 | 2 | HTML/CSS/JS inline en dashboard.py | Hard de mantener, considerar templates separados |
-| 3 | Sin CI/CD — deploy manual vía SCP | Lento, propenso a errores |
+| 3 | ~~Sin CI/CD — deploy manual vía SCP~~ → Ahora es `git pull` | ✅ Resuelto |
 | 4 | API keys en systemd service (visible en `systemctl cat`) | Mejor usar archivo `.env` |
 | 5 | Sin rate limiting en API endpoints | Posible abuso si el basic auth se comparte |
 | 6 | Logs solo en journald — sin agregación | Difícil debuggear problemas históricos |
@@ -375,8 +388,11 @@ curl -s -u patdilet:patdilet2026 https://leads.patdilet.dev/api/stats | python3 
 systemctl status leads-dashboard.service
 journalctl -u leads-dashboard.service --no-pager -n 20
 
-# Deploy
+# Deploy (git pull)
 cd /Volumes/M2\ SSD/Repos/PDL/patdilet/lead-scout
-scp *.py root@91.99.157.147:/root/.hermes/home/lead_scout/
-ssh root@91.99.157.147 "fuser -k 5004/tcp; systemctl restart leads-dashboard"
+git push origin main
+ssh root@91.99.157.147 "cd /root/.hermes/home/lead_scout && git pull origin main && fuser -k 5004/tcp; systemctl restart leads-dashboard"
+
+# O usar el script:
+bash deploy/deploy.sh
 ```
