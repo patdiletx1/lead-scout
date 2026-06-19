@@ -1462,9 +1462,25 @@ def api_outreach_approve(attempt_id):
             send_result["error"] = f"Playwright error: {e}"
 
     elif channel == "email":
-        # Email sending not implemented yet — requires SMTP config
-        send_result["error"] = "Email sending not yet implemented. Configure SMTP."
-        send_result["ok"] = False
+        to_email = attempt["contact_email"] or ""
+        if not to_email:
+            mark_outreach_failed(attempt_id, "No email address available")
+            return jsonify({"ok": False, "error": "No email address available"}), 400
+
+        subject = attempt["subject"] or ""
+        to_name = attempt["contact_name"] or ""
+        language = "es" if any(r in (attempt["location"] or "").lower()
+                              for r in ["chile","argentina","mexico","colombia","peru","uruguay","spain","españa","latam"]) else "en"
+
+        try:
+            from email_sender import EmailSender
+            es = EmailSender()
+            if es._is_configured():
+                send_result = es.send(to_email, subject, body, to_name, language)
+            else:
+                send_result = {"ok": False, "error": "Email not configured. Set GMAIL_APP_PASSWORD env var.", "method": "email"}
+        except Exception as e:
+            send_result["error"] = f"Email error: {e}"
 
     else:
         send_result["error"] = f"Unknown channel: {channel}"
