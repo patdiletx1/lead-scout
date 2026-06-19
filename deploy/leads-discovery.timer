@@ -1,0 +1,11 @@
+[Unit]
+Description=ClientScout Daily Lead Discovery Timer
+Requires=leads-discovery.service
+
+[Timer]
+OnCalendar=Mon..Fri 13:00:00 UTC
+RandomizedDelaySec=900
+Persistent=true
+
+[Install]
+WantedBy=timers.target

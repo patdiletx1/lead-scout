@@ -1,0 +1,17 @@
+[Unit]
+Description=ClientScout Lead Dashboard (Flask)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/data/home/lead_scout
+ExecStart=/usr/bin/docker exec hermes /opt/hermes/.venv/bin/python3 /opt/data/home/lead_scout/lead_dashboard.py --host 0.0.0.0 --port 5004
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

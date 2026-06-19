@@ -1,0 +1,11 @@
+[Unit]
+Description=ClientScout Daily Lead Discovery
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/docker exec hermes /bin/bash /opt/data/home/lead_scout/cron_discovery.sh
+StandardOutput=journal
+StandardError=journal

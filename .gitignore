@@ -1,0 +1,39 @@
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Output files
+output_leads/
+output_jobs/
+
+# Screenshots
+screenshots/
+
+# Playwright sessions
+.playwright_sessions/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Risk state
+.risk_state.json
+
+# Temp scripts
+_*.py
+show_*.py
